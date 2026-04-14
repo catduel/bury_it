@@ -9,9 +9,9 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.nevalabs.buryit
+      vars:
+        BUNDLE_ID: "com.nevalabs.buryit"
+        APP_STORE_APP_ID: "6744233912"
     scripts:
       - name: Set up code signing settings on Xcode project
         script: |
@@ -19,6 +19,9 @@ workflows:
       - name: Get Flutter packages
         script: |
           flutter pub get
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios && pod install
       - name: Build IPA
         script: |
           flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
@@ -28,3 +31,5 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+        beta_groups:
+          - External Testers
