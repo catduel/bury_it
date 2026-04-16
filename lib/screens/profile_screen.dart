@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/supabase_service.dart';
 import 'premium_screen.dart';
 import 'welcome_screen.dart';
@@ -55,6 +56,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Opening: $url'), backgroundColor: const Color(0xFF8B5CF6)),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open: $url'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   void _showAboutDialog() {
     showDialog(
       context: context,
@@ -71,22 +91,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Container(
                 width: 70,
-                height: 90,
+                height: 70,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1E1E2E), Color(0xFF12121A)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                   ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(35),
-                    topRight: Radius.circular(35),
-                    bottomLeft: Radius.circular(5),
-                    bottomRight: Radius.circular(5),
-                  ),
-                  border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5), width: 2),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Center(child: Text('⚰️', style: TextStyle(fontSize: 32))),
+                child: const Center(
+                  child: Icon(Icons.favorite_border, color: Colors.white, size: 36),
+                ),
               ),
               const SizedBox(height: 16),
               ShaderMask(
@@ -129,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text('Istanbul, Turkey 🇹🇷', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                    Text('Istanbul, Turkey', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                   ],
                 ),
               ),
@@ -175,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.red.withOpacity(0.3)),
                 ),
-                child: const Center(child: Text('⚠️', style: TextStyle(fontSize: 28))),
+                child: const Center(child: Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32)),
               ),
               const SizedBox(height: 16),
               const Text('Delete Account?', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
@@ -240,280 +254,305 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = SupabaseService.currentAuthUser?.email;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0F),
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      children: [
-                        Container(
-                          width: 55,
-                          height: 55,
-                          decoration: BoxDecoration(
-                            gradient: isPremium
-                                ? const LinearGradient(colors: [Color(0xFFC9A962), Color(0xFF8B5CF6)])
-                                : const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(child: Text(isPremium ? '👑' : '👻', style: const TextStyle(fontSize: 24))),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-                                  ),
-                                  if (isPremium) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(color: const Color(0xFFC9A962), borderRadius: BorderRadius.circular(8)),
-                                      child: const Text('PRO', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(email ?? '', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ).animate().fadeIn(),
-
-                    const SizedBox(height: 20),
-
-                    // Daily Limits
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF12121A),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            : RefreshIndicator(
+                onRefresh: _loadProfile,
+                color: const Color(0xFF8B5CF6),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
                         children: [
-                          const Row(
-                            children: [
-                              Text('📊', style: TextStyle(fontSize: 16)),
-                              SizedBox(width: 8),
-                              Text('Daily Usage', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                            ],
+                          Container(
+                            width: 55,
+                            height: 55,
+                            decoration: BoxDecoration(
+                              gradient: isPremium
+                                  ? const LinearGradient(colors: [Color(0xFFC9A962), Color(0xFF8B5CF6)])
+                                  : const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isPremium ? Icons.workspace_premium : Icons.person,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          _buildLimitRow('👁️ Visits', _stats['daily_visits'] ?? 0, isPremium ? 999 : 5, isPremium),
-                          const SizedBox(height: 8),
-                          _buildLimitRow('🕯️ Reactions', _stats['daily_reactions'] ?? 0, isPremium ? 999 : 2, isPremium),
-                          const SizedBox(height: 8),
-                          _buildLimitRow('💬 Comments', _stats['daily_comments'] ?? 0, isPremium ? 999 : 1, isPremium),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                    ),
+                                    if (isPremium) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: const Color(0xFFC9A962), borderRadius: BorderRadius.circular(8)),
+                                        child: const Text('PRO', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(email ?? '', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                              ],
+                            ),
+                          ),
                         ],
-                      ),
-                    ).animate().fadeIn(delay: 100.ms),
+                      ).animate().fadeIn(),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
-                    // My Graves
-                    Row(
-                      children: [
-                        const Text('⚰️', style: TextStyle(fontSize: 16)),
-                        const SizedBox(width: 8),
-                        const Text('My Graves', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                        const Spacer(),
-                        Text('${_myGraves.length}/${isPremium ? '∞' : '3'}', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    if (_myGraves.isEmpty)
+                      // Daily Limits
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: const Color(0xFF12121A),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
                         ),
-                        child: const Column(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('🪦', style: TextStyle(fontSize: 32)),
-                            SizedBox(height: 8),
-                            Text('No graves yet', style: TextStyle(color: Colors.white, fontSize: 14)),
-                            Text('Bury something to get started', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                          ],
-                        ),
-                      )
-                    else
-                      ...List.generate(
-                        _myGraves.length > 3 ? 3 : _myGraves.length,
-                        (index) {
-                          final grave = _myGraves[index];
-                          final isApproved = grave['is_approved'] ?? false;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF12121A),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: isApproved ? const Color(0xFF8B5CF6).withOpacity(0.3) : const Color(0xFFC9A962).withOpacity(0.3)),
-                            ),
-                            child: Row(
+                            Row(
                               children: [
-                                const Text('🪦', style: TextStyle(fontSize: 20)),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Flexible(child: Text(grave['title'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis)),
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: isApproved ? Colors.green.withOpacity(0.2) : const Color(0xFFC9A962).withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(isApproved ? '✓ Live' : '⏳ Pending', style: TextStyle(color: isApproved ? Colors.green : const Color(0xFFC9A962), fontSize: 8, fontWeight: FontWeight.w600)),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text('🕯️${grave['respect_count'] ?? 0}  💐${grave['flower_count'] ?? 0}  👁️${grave['visitor_count'] ?? 0}', style: TextStyle(color: Colors.grey[500], fontSize: 10)),
-                                    ],
-                                  ),
+                                const Icon(Icons.show_chart, color: Color(0xFF8B5CF6), size: 18),
+                                const SizedBox(width: 8),
+                                const Text('Daily Usage', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: _loadProfile,
+                                  child: Icon(Icons.refresh, color: Colors.grey[600], size: 18),
                                 ),
                               ],
                             ),
-                          ).animate().fadeIn(delay: (150 + index * 50).ms);
-                        },
+                            const SizedBox(height: 12),
+                            _buildLimitRow('Visits', _stats['daily_visits'] ?? 0, isPremium ? 999 : 5, isPremium),
+                            const SizedBox(height: 8),
+                            _buildLimitRow('Reactions', _stats['daily_reactions'] ?? 0, isPremium ? 999 : 2, isPremium),
+                            const SizedBox(height: 8),
+                            _buildLimitRow('Comments', _stats['daily_comments'] ?? 0, isPremium ? 999 : 1, isPremium),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 100.ms),
+
+                      const SizedBox(height: 16),
+
+                      // My Graves
+                      Row(
+                        children: [
+                          const Icon(Icons.yard, color: Color(0xFF8B5CF6), size: 18),
+                          const SizedBox(width: 8),
+                          const Text('My Graves', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                          const Spacer(),
+                          Text('${_myGraves.length}/${isPremium ? '∞' : '3'}', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                        ],
                       ),
+                      const SizedBox(height: 10),
 
-                    const SizedBox(height: 16),
-
-                    // Premium
-                    if (!isPremium)
-                      GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PremiumScreen())),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
+                      if (_myGraves.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFFC9A962), Color(0xFF8B5CF6)]),
-                            borderRadius: BorderRadius.circular(14),
+                            color: const Color(0xFF12121A),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Row(
+                          child: Column(
                             children: [
-                              Text('👑', style: TextStyle(fontSize: 20)),
-                              SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Icon(Icons.yard_outlined, color: Colors.grey[600], size: 40),
+                              const SizedBox(height: 8),
+                              const Text('No graves yet', style: TextStyle(color: Colors.white, fontSize: 14)),
+                              Text('Bury something to get started', style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                            ],
+                          ),
+                        )
+                      else
+                        ...List.generate(
+                          _myGraves.length > 3 ? 3 : _myGraves.length,
+                          (index) {
+                            final grave = _myGraves[index];
+                            final isApproved = grave['is_approved'] ?? false;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF12121A),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: isApproved ? const Color(0xFF8B5CF6).withOpacity(0.3) : const Color(0xFFC9A962).withOpacity(0.3)),
+                              ),
+                              child: Row(
                                 children: [
-                                  Text('Upgrade to Premium', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                                  Text('Unlimited graves & reactions', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                  Icon(Icons.yard, color: isApproved ? const Color(0xFF8B5CF6) : const Color(0xFFC9A962), size: 24),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(child: Text(grave['title'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis)),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: isApproved ? Colors.green.withOpacity(0.2) : const Color(0xFFC9A962).withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(isApproved ? 'Live' : 'Pending', style: TextStyle(color: isApproved ? Colors.green : const Color(0xFFC9A962), fontSize: 8, fontWeight: FontWeight.w600)),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text('${grave['respect_count'] ?? 0} respects · ${grave['flower_count'] ?? 0} flowers', style: TextStyle(color: Colors.grey[500], fontSize: 10)),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
-                              Spacer(),
-                              Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                            ).animate().fadeIn(delay: (150 + index * 50).ms);
+                          },
+                        ),
+
+                      const SizedBox(height: 16),
+
+                      // Premium
+                      if (!isPremium)
+                        GestureDetector(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PremiumScreen())),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [Color(0xFFC9A962), Color(0xFF8B5CF6)]),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.workspace_premium, color: Colors.white, size: 24),
+                                const SizedBox(width: 10),
+                                const Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Upgrade to Premium', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                    Text('Unlimited graves & reactions', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                  ],
+                                ),
+                                const Spacer(),
+                                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+                              ],
+                            ),
+                          ),
+                        ).animate().fadeIn(delay: 200.ms),
+
+                      const SizedBox(height: 16),
+
+                      // Settings Section
+                      Row(
+                        children: [
+                          const Icon(Icons.settings, color: Color(0xFF8B5CF6), size: 18),
+                          const SizedBox(width: 8),
+                          const Text('Settings', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF12121A),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildSettingsItem(icon: Icons.info_outline, title: 'About', subtitle: 'Version 1.0.0', onTap: _showAboutDialog),
+                            Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+                            _buildSettingsItem(
+                              icon: Icons.privacy_tip_outlined, 
+                              title: 'Privacy Policy', 
+                              onTap: () => _launchUrl('https://www.termsfeed.com/live/placeholder-privacy'),
+                            ),
+                            Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+                            _buildSettingsItem(
+                              icon: Icons.description_outlined, 
+                              title: 'Terms of Service', 
+                              onTap: () => _launchUrl('https://www.termsfeed.com/live/placeholder-terms'),
+                            ),
+                            Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+                            _buildSettingsItem(icon: Icons.delete_outline, title: 'Delete Account', titleColor: Colors.red, onTap: _showDeleteAccountDialog),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 250.ms),
+
+                      const SizedBox(height: 14),
+
+                      // Sign Out
+                      GestureDetector(
+                        onTap: _signOut,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF12121A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red.withOpacity(0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.logout, color: Colors.red, size: 16),
+                              SizedBox(width: 6),
+                              Text('Sign Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13)),
                             ],
                           ),
                         ),
-                      ).animate().fadeIn(delay: 200.ms),
+                      ).animate().fadeIn(delay: 300.ms),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
-                    // Settings Section
-                    const Row(
-                      children: [
-                        Text('⚙️', style: TextStyle(fontSize: 16)),
-                        SizedBox(width: 8),
-                        Text('Settings', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF12121A),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildSettingsItem(icon: 'ℹ️', title: 'About', subtitle: 'Version 1.0.0', onTap: _showAboutDialog),
-                          Divider(color: Colors.grey.withOpacity(0.2), height: 1),
-                          _buildSettingsItem(icon: '🔒', title: 'Privacy Policy', onTap: () {}),
-                          Divider(color: Colors.grey.withOpacity(0.2), height: 1),
-                          _buildSettingsItem(icon: '📄', title: 'Terms of Service', onTap: () {}),
-                          Divider(color: Colors.grey.withOpacity(0.2), height: 1),
-                          _buildSettingsItem(icon: '🗑️', title: 'Delete Account', titleColor: Colors.red, onTap: _showDeleteAccountDialog),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 250.ms),
-
-                    const SizedBox(height: 14),
-
-                    // Sign Out
-                    GestureDetector(
-                      onTap: _signOut,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF12121A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.withOpacity(0.3)),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      // Footer
+                      Center(
+                        child: Column(
                           children: [
-                            Icon(Icons.logout, color: Colors.red, size: 16),
-                            SizedBox(width: 6),
-                            Text('Sign Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Made with love by', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFFC9A962)]).createShader(bounds),
+                              child: const Text('Neva Labs', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                            ),
                           ],
                         ),
                       ),
-                    ).animate().fadeIn(delay: 300.ms),
 
-                    const SizedBox(height: 20),
-
-                    // Footer
-                    Center(
-                      child: Column(
-                        children: [
-                          Text('Made with 🖤 by', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFFC9A962)]).createShader(bounds),
-                            child: const Text('Neva Labs', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                  ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
       ),
     );
   }
 
-  Widget _buildSettingsItem({required String icon, required String title, String? subtitle, Color? titleColor, required VoidCallback onTap}) {
+  Widget _buildSettingsItem({required IconData icon, required String title, String? subtitle, Color? titleColor, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 16)),
+            Icon(icon, color: titleColor ?? Colors.grey[400], size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

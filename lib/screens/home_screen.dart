@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'graveyard_screen.dart';
 import 'stats_screen.dart';
 import 'bury_screen.dart';
@@ -14,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  
+
   final List<Widget> _screens = [
     const GraveyardScreen(),
     const StatsScreen(),
@@ -28,14 +27,13 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF12121A),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF8B5CF6).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
+          color: const Color(0xFF0A0A0F),
+          border: Border(
+            top: BorderSide(
+              color: const Color(0xFF8B5CF6).withOpacity(0.2),
+              width: 1,
             ),
-          ],
+          ),
         ),
         child: SafeArea(
           child: Padding(
@@ -43,10 +41,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.landscape, 'Graveyard'),
-                _buildNavItem(1, Icons.leaderboard, 'Stats'),
+                _buildNavItem(0, Icons.yard, 'Graveyard'),
+                _buildNavItem(1, Icons.bar_chart, 'Stats'),
                 _buildBuryButton(),
-                _buildNavItem(3, Icons.person, 'Profile'),
+                _buildNavItem(3, Icons.person_outline, 'Profile'),
               ],
             ),
           ),
@@ -60,41 +58,38 @@ class _HomeScreenState extends State<HomeScreen> {
     
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected 
-              ? const Color(0xFF8B5CF6).withOpacity(0.2)
+              ? const Color(0xFF8B5CF6).withOpacity(0.2) 
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected 
+              ? Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.5)) 
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              color: isSelected 
-                  ? const Color(0xFF8B5CF6)
-                  : Colors.grey,
               size: 24,
+              color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                color: isSelected 
-                    ? const Color(0xFF8B5CF6)
-                    : Colors.grey,
-                fontSize: 11,
+                fontSize: 10,
+                color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
         ),
       ),
-    ).animate(target: isSelected ? 1 : 0)
-      .scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05));
+    );
   }
 
   Widget _buildBuryButton() {
@@ -102,46 +97,41 @@ class _HomeScreenState extends State<HomeScreen> {
     
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = 2),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isSelected
-                ? [const Color(0xFF8B5CF6), const Color(0xFFC9A962)]
-                : [const Color(0xFF8B5CF6).withOpacity(0.8), const Color(0xFF8B5CF6).withOpacity(0.6)],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8B5CF6), Color(0xFFC9A962)],
           ),
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF8B5CF6).withOpacity(0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '⚰️',
-              style: TextStyle(
-                fontSize: isSelected ? 22 : 20,
-              ),
+            Icon(
+              Icons.add_box_rounded,
+              size: 24,
+              color: isSelected ? Colors.white : Colors.white70,
             ),
             const SizedBox(height: 2),
             const Text(
               'Bury',
               style: TextStyle(
+                fontSize: 10,
                 color: Colors.white,
-                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
       ),
-    ).animate(target: isSelected ? 1 : 0)
-      .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1));
+    );
   }
 }

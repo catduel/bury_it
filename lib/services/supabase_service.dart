@@ -58,8 +58,19 @@ class SupabaseService {
 
   static Future<void> _loadUserProfile(String userId) async {
     try {
-      final response = await _client.from('users').select().eq('id', userId).single();
-      _currentUser = response;
+      final response = await _client.from('users').select().eq('id', userId).maybeSingle();
+      if (response != null) {
+        _currentUser = response;
+      } else {
+        // User exists in auth but not in users table, create profile
+        await _client.from('users').insert({
+          'id': userId,
+          'display_name': 'User',
+          'is_premium': false,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        _currentUser = {'id': userId, 'display_name': 'User', 'is_premium': false};
+      }
     } catch (e) {
       print('Load profile error: $e');
     }
@@ -297,24 +308,33 @@ class SupabaseService {
   // ==================== INTERACTIONS ====================
 
   static Future<void> incrementVisitor(String graveId) async {
+    final userId = effectiveUserId;
+    
     try {
-      await _client.rpc('increment_visitor', params: {'grave_id': graveId});
-    } catch (e) {
-      try {
-        final grave = await _client.from('graves').select('visitor_count').eq('id', graveId).single();
-        await _client.from('graves').update({'visitor_count': (grave['visitor_count'] ?? 0) + 1}).eq('id', graveId);
-      } catch (e2) {
-        print('Increment visitor error: $e2');
+      // Update grave visitor count
+      final grave = await _client.from('graves').select('visitor_count').eq('id', graveId).single();
+      await _client.from('graves').update({
+        'visitor_count': (grave['visitor_count'] ?? 0) + 1,
+      }).eq('id', graveId);
+      
+      // Track daily action for limits
+      if (userId != null) {
+        await _trackDailyAction('visit');
       }
+    } catch (e) {
+      print('Increment visitor error: $e');
     }
   }
 
   static Future<bool> addReaction(String visitorId, String graveId, String type) async {
     try {
+      // Check if already reacted
       final existing = await _client.from('reactions').select()
-          .eq('visitor_id', visitorId).eq('grave_id', graveId);
+          .eq('visitor_id', visitorId).eq('grave_id', graveId).eq('type', type);
+      
       if (existing.isNotEmpty) return false;
 
+      // Add reaction
       await _client.from('reactions').insert({
         'id': _uuid.v4(),
         'visitor_id': visitorId,
@@ -323,10 +343,14 @@ class SupabaseService {
         'created_at': DateTime.now().toIso8601String(),
       });
 
+      // Update grave count
       final field = type == 'respect' ? 'respect_count' : 'flower_count';
       final grave = await _client.from('graves').select(field).eq('id', graveId).single();
       await _client.from('graves').update({field: (grave[field] ?? 0) + 1}).eq('id', graveId);
+      
+      // Track daily action
       await _trackDailyAction('reaction');
+      
       return true;
     } catch (e) {
       print('Add reaction error: $e');
@@ -351,7 +375,8 @@ class SupabaseService {
   }) async {
     try {
       final anonymousNames = ['Wandering Soul', 'Silent Visitor', 'Midnight Ghost',
-        'Peaceful Spirit', 'Gentle Shadow', 'Quiet Mourner', 'Lost Wanderer'];
+        'Peaceful Spirit', 'Gentle Shadow', 'Quiet Mourner', 'Lost Wanderer',
+        'Ethereal Being', 'Mystic Traveler', 'Shadowy Figure'];
       anonymousNames.shuffle();
 
       await _client.from('comments').insert({
@@ -362,6 +387,7 @@ class SupabaseService {
         'anonymous_name': anonymousNames.first,
         'created_at': DateTime.now().toIso8601String(),
       });
+      
       await _trackDailyAction('comment');
       return true;
     } catch (e) {
@@ -375,7 +401,9 @@ class SupabaseService {
   static Future<void> _trackDailyAction(String actionType) async {
     final userId = effectiveUserId;
     if (userId == null) return;
+    
     final today = DateTime.now().toIso8601String().split('T')[0];
+    
     try {
       await _client.from('daily_actions').insert({
         'id': _uuid.v4(),
@@ -392,7 +420,9 @@ class SupabaseService {
   static Future<int> _getDailyActionCount(String actionType) async {
     final userId = effectiveUserId;
     if (userId == null) return 0;
+    
     final today = DateTime.now().toIso8601String().split('T')[0];
+    
     try {
       final response = await _client.from('daily_actions').select()
           .eq('user_id', userId).eq('action_type', actionType).eq('action_date', today);
