@@ -13,31 +13,22 @@ class GraveyardScreen extends StatefulWidget {
 class _GraveyardScreenState extends State<GraveyardScreen> {
   List<Map<String, dynamic>> _graves = [];
   bool _isLoading = true;
-  bool _isLoadingMore = false;
-  String _selectedCategory = 'All';
+  String _selectedCategory = 'all';
   String _sortBy = 'newest';
-  int _currentPage = 0;
-  int _totalCount = 0;
-  bool _hasMore = true;
 
   final List<Map<String, String>> _categories = [
-    {'id': 'All', 'emoji': '🪦', 'label': 'All'},
-    {'id': 'ex-lover', 'emoji': '💔', 'label': 'Ex-Lover'},
-    {'id': 'toxic-friend', 'emoji': '🐍', 'label': 'Toxic Friend'},
-    {'id': 'old-job', 'emoji': '💼', 'label': 'Old Job'},
-    {'id': 'embarrassing', 'emoji': '🙈', 'label': 'Cringe'},
-    {'id': 'regret', 'emoji': '😔', 'label': 'Regret'},
-    {'id': 'broken-dream', 'emoji': '💭', 'label': 'Dreams'},
-    {'id': 'old-self', 'emoji': '👤', 'label': 'Old Self'},
-    {'id': 'addiction', 'emoji': '⛓️', 'label': 'Addiction'},
-    {'id': 'failure', 'emoji': '📉', 'label': 'Failure'},
-    {'id': 'other', 'emoji': '🔮', 'label': 'Other'},
-  ];
-
-  final List<Map<String, String>> _sortOptions = [
-    {'id': 'newest', 'emoji': '🆕', 'label': 'Newest'},
-    {'id': 'popular', 'emoji': '🔥', 'label': 'Popular'},
-    {'id': 'random', 'emoji': '🎲', 'label': 'Random'},
+    {'id': 'all', 'name': 'All', 'emoji': '🪦'},
+    {'id': 'ex-lover', 'name': 'Ex-Lover', 'emoji': '💔'},
+    {'id': 'toxic-friend', 'name': 'Toxic Friend', 'emoji': '🐍'},
+    {'id': 'old-job', 'name': 'Old Job', 'emoji': '💼'},
+    {'id': 'embarrassing', 'name': 'Embarrassing', 'emoji': '🙈'},
+    {'id': 'regret', 'name': 'Regret', 'emoji': '😔'},
+    {'id': 'broken-dream', 'name': 'Broken Dream', 'emoji': '💭'},
+    {'id': 'old-self', 'name': 'Old Self', 'emoji': '👤'},
+    {'id': 'addiction', 'name': 'Addiction', 'emoji': '⛓️'},
+    {'id': 'failure', 'name': 'Failure', 'emoji': '📉'},
+    {'id': 'betrayal', 'name': 'Betrayal', 'emoji': '🗡️'},
+    {'id': 'lost-love', 'name': 'Lost Love', 'emoji': '🥀'},
   ];
 
   @override
@@ -46,385 +37,334 @@ class _GraveyardScreenState extends State<GraveyardScreen> {
     _loadGraves();
   }
 
-  Future<void> _loadGraves({bool refresh = true}) async {
-    if (refresh) {
-      setState(() {
-        _isLoading = true;
-        _currentPage = 0;
-        _graves = [];
-      });
-    }
-
+  Future<void> _loadGraves() async {
+    setState(() => _isLoading = true);
+    
     try {
       final result = await SupabaseService.getGravesPaginated(
-        category: _selectedCategory == 'All' ? null : _selectedCategory,
+        category: _selectedCategory == 'all' ? null : _selectedCategory,
         sortBy: _sortBy,
-        page: _currentPage,
-        limit: 20,
       );
-
+      
       setState(() {
-        if (refresh) {
-          _graves = List<Map<String, dynamic>>.from(result['graves']);
-        } else {
-          _graves.addAll(List<Map<String, dynamic>>.from(result['graves']));
-        }
-        _totalCount = result['totalCount'];
-        _hasMore = result['hasMore'];
+        _graves = List<Map<String, dynamic>>.from(result['graves'] ?? []);
         _isLoading = false;
-        _isLoadingMore = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _isLoadingMore = false;
-      });
-    }
-  }
-
-  Future<void> _loadMore() async {
-    if (_isLoadingMore || !_hasMore) return;
-    setState(() {
-      _isLoadingMore = true;
-      _currentPage++;
-    });
-    await _loadGraves(refresh: false);
-  }
-
-  Future<void> _visitRandomGrave() async {
-    final grave = await SupabaseService.getRandomGrave();
-    if (grave != null && mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => GraveDetailScreen(grave: grave)),
-      );
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f0f23)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
                   children: [
-                    Text('⚰️', style: TextStyle(fontSize: 40)),
-                    SizedBox(height: 12),
-                    Text('Digging up graves...', style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: () => _loadGraves(),
-                color: const Color(0xFF8B5CF6),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 12),
-                        // Compact Header
-                        Row(
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFFa78bfa), Color(0xFFf472b6)],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Graveyard',
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Sort Button
+                    GestureDetector(
+                      onTap: () => _showSortOptions(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.2)),
+                        ),
+                        child: Row(
                           children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF8B5CF6), Color(0xFFC9A962)],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Center(
-                                child: Text('⚰️', style: TextStyle(fontSize: 18)),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Bury It',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  'Your eternal sanctuary',
-                                  style: TextStyle(fontSize: 10, color: Colors.grey),
-                                ),
-                              ],
+                            Icon(Icons.sort, color: const Color(0xFFa78bfa), size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              _sortBy == 'newest' ? 'New' : _sortBy == 'popular' ? 'Hot' : 'Random',
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(),
 
-                        const SizedBox(height: 10),
-
-                        // Sort Options
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF12121A),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: _sortOptions.map((option) {
-                              final isSelected = _sortBy == option['id'];
-                              return Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() => _sortBy = option['id']!);
-                                    _loadGraves();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    decoration: BoxDecoration(
-                                      gradient: isSelected
-                                          ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)])
-                                          : null,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(option['emoji']!, style: const TextStyle(fontSize: 11)),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          option['label']!,
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.white : Colors.grey,
-                                            fontSize: 11,
-                                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+              // Categories
+              SizedBox(
+                height: 50,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    final cat = _categories[index];
+                    final isSelected = _selectedCategory == cat['id'];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedCategory = cat['id']!);
+                        _loadGraves();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: isSelected 
+                              ? const LinearGradient(colors: [Color(0xFFa78bfa), Color(0xFF8b5cf6)])
+                              : null,
+                          color: isSelected ? null : Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(
+                            color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.15),
                           ),
                         ),
-
-                        const SizedBox(height: 10),
-
-                        // Categories
-                        SizedBox(
-                          height: 32,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _categories.length,
-                            itemBuilder: (context, index) {
-                              final cat = _categories[index];
-                              final isSelected = _selectedCategory == cat['id'];
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() => _selectedCategory = cat['id']!);
-                                    _loadGraves();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF12121A),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey.withOpacity(0.3),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(cat['emoji']!, style: const TextStyle(fontSize: 10)),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          cat['label']!,
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.white : Colors.grey,
-                                            fontSize: 10,
-                                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        // Random Grave Button
-                        GestureDetector(
-                          onTap: _visitRandomGrave,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF8B5CF6).withOpacity(0.2),
-                                  const Color(0xFFC9A962).withOpacity(0.2),
-                                ],
+                        child: Row(
+                          children: [
+                            Text(cat['emoji']!, style: const TextStyle(fontSize: 16)),
+                            const SizedBox(width: 6),
+                            Text(
+                              cat['name']!,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.grey[400],
+                                fontSize: 13,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                               ),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFC9A962).withOpacity(0.4)),
                             ),
-                            child: const Row(
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ).animate().fadeIn(delay: 100.ms),
+
+              const SizedBox(height: 16),
+
+              // Graves Grid
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Color(0xFFa78bfa)))
+                    : _graves.isEmpty
+                        ? Center(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text('🪦', style: TextStyle(fontSize: 12)),
-                                SizedBox(width: 6),
-                                Icon(Icons.shuffle, color: Color(0xFFC9A962), size: 14),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Visit Random Grave',
-                                  style: TextStyle(color: Color(0xFFC9A962), fontWeight: FontWeight.w600, fontSize: 12),
-                                ),
+                                Icon(Icons.yard_outlined, color: Colors.grey[600], size: 64),
+                                const SizedBox(height: 16),
+                                Text('No graves yet', style: TextStyle(color: Colors.grey[400], fontSize: 18)),
+                                Text('Be the first to bury something', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                               ],
                             ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // Count
-                        Text(
-                          'Showing ${_graves.length} of $_totalCount graves',
-                          style: const TextStyle(color: Colors.grey, fontSize: 10),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // Graves Grid
-                        _graves.isEmpty
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(40),
-                                  child: Column(
-                                    children: [
-                                      Text('🪦', style: TextStyle(fontSize: 40)),
-                                      SizedBox(height: 12),
-                                      Text('The graveyard is empty', style: TextStyle(color: Colors.white, fontSize: 14)),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10,
-                                  childAspectRatio: 0.9,
-                                ),
-                                itemCount: _graves.length,
-                                itemBuilder: (context, index) => _buildGraveCard(_graves[index]),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadGraves,
+                            color: const Color(0xFFa78bfa),
+                            child: GridView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.85,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
-
-                        // Load More
-                        if (_hasMore && _graves.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: GestureDetector(
-                              onTap: _isLoadingMore ? null : _loadMore,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF12121A),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
-                                ),
-                                child: Center(
-                                  child: _isLoadingMore
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(color: Color(0xFF8B5CF6), strokeWidth: 2),
-                                        )
-                                      : const Text('Load More', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.w600)),
-                                ),
-                              ),
+                              itemCount: _graves.length,
+                              itemBuilder: (context, index) {
+                                final grave = _graves[index];
+                                return _buildGraveCard(grave, index);
+                              },
                             ),
                           ),
-
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-                ),
               ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildGraveCard(Map<String, dynamic> grave) {
-    final cat = _categories.firstWhere((c) => c['id'] == grave['category'], orElse: () => {'emoji': '🪦'});
-    final isPremium = ['diamond', 'fire', 'star', 'crown', 'skull', 'rose', 'ghost', 'crystal'].contains(grave['tombstone_style']);
+  Widget _buildGraveCard(Map<String, dynamic> grave, int index) {
+    final category = grave['category'] ?? 'other';
+    final tombstoneStyle = grave['tombstone_style'] ?? 'classic';
+    final isPremium = ['diamond', 'fire', 'star', 'crown', 'skull', 'rose', 'ghost', 'crystal'].contains(tombstoneStyle);
+
+    final categoryEmojis = {
+      'ex-lover': '💔', 'toxic-friend': '🐍', 'old-job': '💼', 'embarrassing': '🙈',
+      'regret': '😔', 'broken-dream': '💭', 'old-self': '👤', 'addiction': '⛓️',
+      'failure': '📉', 'betrayal': '🗡️', 'lost-love': '🥀', 'other': '🔮',
+    };
 
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GraveDetailScreen(grave: grave))),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => GraveDetailScreen(grave: grave)),
+        );
+      },
       child: Container(
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFF12121A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isPremium ? const Color(0xFFC9A962).withOpacity(0.5) : const Color(0xFF8B5CF6).withOpacity(0.2)),
+          gradient: LinearGradient(
+            colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isPremium ? const Color(0xFFd4a853).withOpacity(0.5) : Colors.white.withOpacity(0.15),
+            width: isPremium ? 2 : 1,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Tombstone
+            // Tombstone mini
             Container(
-              width: 50,
-              height: 62,
+              width: 60,
+              height: 75,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E2E),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
-                  bottomLeft: Radius.circular(3),
-                  bottomRight: Radius.circular(3),
+                gradient: LinearGradient(
+                  colors: isPremium 
+                      ? [const Color(0xFF4a3f6b), const Color(0xFF2d2a4a)]
+                      : [const Color(0xFF3d3a5c), const Color(0xFF252340)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                border: Border.all(color: isPremium ? const Color(0xFFC9A962).withOpacity(0.5) : const Color(0xFF8B5CF6).withOpacity(0.3)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(cat['emoji']!, style: const TextStyle(fontSize: 18)),
-                  Text('RIP', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: isPremium ? const Color(0xFFC9A962) : const Color(0xFF8B5CF6))),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                  bottomLeft: Radius.circular(6),
+                  bottomRight: Radius.circular(6),
+                ),
+                border: Border.all(
+                  color: isPremium ? const Color(0xFFd4a853) : const Color(0xFFa78bfa).withOpacity(0.6),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isPremium ? const Color(0xFFd4a853) : const Color(0xFFa78bfa)).withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
                 ],
               ),
+              child: Center(
+                child: Text(categoryEmojis[category] ?? '🪦', style: const TextStyle(fontSize: 24)),
+              ),
             ),
-            const SizedBox(height: 8),
+            
+            const SizedBox(height: 12),
+            
             // Title
-            Text(
-              grave['title'] ?? 'Unknown',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                grave['title'] ?? 'Unknown',
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            const SizedBox(height: 6),
+            
+            const SizedBox(height: 8),
+            
             // Stats
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('🕯️${grave['respect_count'] ?? 0}', style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                const SizedBox(width: 8),
-                Text('💐${grave['flower_count'] ?? 0}', style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                const SizedBox(width: 8),
-                Text('👁️${grave['visitor_count'] ?? 0}', style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                Icon(Icons.local_fire_department, color: const Color(0xFFf97316), size: 14),
+                const SizedBox(width: 3),
+                Text('${grave['respect_count'] ?? 0}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                const SizedBox(width: 12),
+                Icon(Icons.local_florist, color: const Color(0xFFec4899), size: 14),
+                const SizedBox(width: 3),
+                Text('${grave['flower_count'] ?? 0}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
               ],
             ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: (50 * index).ms).scale(begin: const Offset(0.95, 0.95), delay: (50 * index).ms);
+  }
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1a1a2e),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Sort by', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            _buildSortOption('newest', 'Newest First', Icons.access_time),
+            _buildSortOption('popular', 'Most Popular', Icons.local_fire_department),
+            _buildSortOption('random', 'Random', Icons.shuffle),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortOption(String value, String label, IconData icon) {
+    final isSelected = _sortBy == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _sortBy = value);
+        Navigator.pop(context);
+        _loadGraves();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: isSelected 
+              ? const LinearGradient(colors: [Color(0xFFa78bfa), Color(0xFF8b5cf6)])
+              : null,
+          color: isSelected ? null : Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.15)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? Colors.white : Colors.grey[400], size: 22),
+            const SizedBox(width: 14),
+            Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.grey[300], fontSize: 16)),
+            const Spacer(),
+            if (isSelected) const Icon(Icons.check, color: Colors.white, size: 22),
           ],
         ),
       ),

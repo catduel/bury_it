@@ -62,7 +62,6 @@ class SupabaseService {
       if (response != null) {
         _currentUser = response;
       } else {
-        // User exists in auth but not in users table, create profile
         await _client.from('users').insert({
           'id': userId,
           'display_name': 'User',
@@ -311,13 +310,11 @@ class SupabaseService {
     final userId = effectiveUserId;
     
     try {
-      // Update grave visitor count
       final grave = await _client.from('graves').select('visitor_count').eq('id', graveId).single();
       await _client.from('graves').update({
         'visitor_count': (grave['visitor_count'] ?? 0) + 1,
       }).eq('id', graveId);
       
-      // Track daily action for limits
       if (userId != null) {
         await _trackDailyAction('visit');
       }
@@ -328,13 +325,11 @@ class SupabaseService {
 
   static Future<bool> addReaction(String visitorId, String graveId, String type) async {
     try {
-      // Check if already reacted
       final existing = await _client.from('reactions').select()
           .eq('visitor_id', visitorId).eq('grave_id', graveId).eq('type', type);
       
       if (existing.isNotEmpty) return false;
 
-      // Add reaction
       await _client.from('reactions').insert({
         'id': _uuid.v4(),
         'visitor_id': visitorId,
@@ -343,12 +338,10 @@ class SupabaseService {
         'created_at': DateTime.now().toIso8601String(),
       });
 
-      // Update grave count
       final field = type == 'respect' ? 'respect_count' : 'flower_count';
       final grave = await _client.from('graves').select(field).eq('id', graveId).single();
       await _client.from('graves').update({field: (grave[field] ?? 0) + 1}).eq('id', graveId);
       
-      // Track daily action
       await _trackDailyAction('reaction');
       
       return true;
@@ -358,11 +351,32 @@ class SupabaseService {
     }
   }
 
+  // Get comments with user display names
   static Future<List<Map<String, dynamic>>> getComments(String graveId) async {
     try {
       final response = await _client.from('comments').select()
           .eq('grave_id', graveId).order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      
+      final comments = List<Map<String, dynamic>>.from(response);
+      
+      // Fetch display names for each comment
+      for (var comment in comments) {
+        if (comment['visitor_id'] != null) {
+          try {
+            final user = await _client.from('users')
+                .select('display_name')
+                .eq('id', comment['visitor_id'])
+                .maybeSingle();
+            if (user != null) {
+              comment['display_name'] = user['display_name'];
+            }
+          } catch (e) {
+            // Keep anonymous_name as fallback
+          }
+        }
+      }
+      
+      return comments;
     } catch (e) {
       return [];
     }
@@ -374,17 +388,18 @@ class SupabaseService {
     required String content,
   }) async {
     try {
-      final anonymousNames = ['Wandering Soul', 'Silent Visitor', 'Midnight Ghost',
-        'Peaceful Spirit', 'Gentle Shadow', 'Quiet Mourner', 'Lost Wanderer',
-        'Ethereal Being', 'Mystic Traveler', 'Shadowy Figure'];
-      anonymousNames.shuffle();
+      // Get current user's display name
+      String displayName = 'Anonymous';
+      if (_currentUser != null && _currentUser!['display_name'] != null) {
+        displayName = _currentUser!['display_name'];
+      }
 
       await _client.from('comments').insert({
         'id': _uuid.v4(),
         'visitor_id': visitorId,
         'grave_id': graveId,
         'content': content,
-        'anonymous_name': anonymousNames.first,
+        'anonymous_name': displayName, // Store display name here too as backup
         'created_at': DateTime.now().toIso8601String(),
       });
       

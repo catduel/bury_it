@@ -160,13 +160,12 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
     };
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF0A0A0F), Color(0xFF12121A), Color(0xFF0A0A0F)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f0f23)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: SafeArea(
@@ -180,27 +179,27 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF12121A),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.2)),
                         ),
                         child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
                       ),
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF12121A),
+                        color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.visibility, color: Color(0xFF8B5CF6), size: 16),
+                          const Icon(Icons.visibility, color: Color(0xFFa78bfa), size: 16),
                           const SizedBox(width: 6),
-                          Text('${_grave['visitor_count'] ?? 0}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                          Text('${_grave['visitor_count'] ?? 0}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
                         ],
                       ),
                     ),
@@ -216,59 +215,61 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
                     children: [
                       // Tombstone
                       Container(
-                        width: 160,
-                        height: 200,
+                        width: 170,
+                        height: 210,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2A2A3A), Color(0xFF1A1A24)],
+                          gradient: LinearGradient(
+                            colors: isPremiumGrave 
+                                ? [const Color(0xFF4a3f6b), const Color(0xFF2d2a4a)]
+                                : [const Color(0xFF3d3a5c), const Color(0xFF252340)],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           ),
                           borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(80),
-                            topRight: Radius.circular(80),
-                            bottomLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
+                            topLeft: Radius.circular(85),
+                            topRight: Radius.circular(85),
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10),
                           ),
                           border: Border.all(
-                            color: isPremiumGrave ? const Color(0xFFC9A962) : const Color(0xFF8B5CF6).withOpacity(0.5),
+                            color: isPremiumGrave ? const Color(0xFFd4a853) : const Color(0xFFa78bfa),
                             width: 3,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: (isPremiumGrave ? const Color(0xFFC9A962) : const Color(0xFF8B5CF6)).withOpacity(0.3),
-                              blurRadius: 20,
-                              spreadRadius: 2,
+                              color: (isPremiumGrave ? const Color(0xFFd4a853) : const Color(0xFFa78bfa)).withOpacity(0.4),
+                              blurRadius: 25,
+                              spreadRadius: 3,
                             ),
                           ],
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(categoryEmojis[category] ?? '🪦', style: const TextStyle(fontSize: 50)),
-                            const SizedBox(height: 10),
+                            Text(categoryEmojis[category] ?? '🪦', style: const TextStyle(fontSize: 55)),
+                            const SizedBox(height: 12),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: isPremiumGrave
-                                      ? [const Color(0xFFC9A962), const Color(0xFF9A7B4F)]
-                                      : [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
+                                      ? [const Color(0xFFd4a853), const Color(0xFFb8942e)]
+                                      : [const Color(0xFFa78bfa), const Color(0xFF8b5cf6)],
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text('R.I.P', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 3)),
+                              child: const Text('R.I.P', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 4)),
                             ),
                           ],
                         ),
                       ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // Title
                       Text(
                         _grave['title'] ?? 'Unknown',
-                        style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ).animate().fadeIn(delay: 200.ms),
 
@@ -276,43 +277,54 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
 
                       // Years
                       if (_grave['year_start'] != null || _grave['year_end'] != null)
-                        Text(
-                          '${_grave['year_start'] ?? '?'} - ${_grave['year_end'] ?? '?'}',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_grave['year_start'] ?? '?'} - ${_grave['year_end'] ?? '?'}',
+                            style: TextStyle(color: Colors.grey[300], fontSize: 14),
+                          ),
                         ).animate().fadeIn(delay: 300.ms),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
                       // Story
                       if (_grave['story'] != null && _grave['story'].toString().isNotEmpty)
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF12121A),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+                            gradient: LinearGradient(
+                              colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.04)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.auto_stories, color: Color(0xFF8B5CF6), size: 18),
-                                  const SizedBox(width: 8),
-                                  const Text('The Story', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                  Icon(Icons.auto_stories, color: const Color(0xFFa78bfa), size: 20),
+                                  const SizedBox(width: 10),
+                                  const Text('The Story', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
                                 ],
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 12),
                               Text(
                                 _grave['story'],
-                                style: TextStyle(color: Colors.grey[400], fontSize: 13, height: 1.5),
+                                style: TextStyle(color: Colors.grey[300], fontSize: 14, height: 1.6),
                               ),
                             ],
                           ),
                         ).animate().fadeIn(delay: 400.ms),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       // Reactions
                       Row(
@@ -323,6 +335,7 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
                             label: 'Respect',
                             count: _grave['respect_count'] ?? 0,
                             isActive: _hasRespected,
+                            color: const Color(0xFFf97316),
                             onTap: () => _addReaction('respect'),
                           ),
                           const SizedBox(width: 16),
@@ -331,89 +344,102 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
                             label: 'Flowers',
                             count: _grave['flower_count'] ?? 0,
                             isActive: _hasFlowered,
+                            color: const Color(0xFFec4899),
                             onTap: () => _addReaction('flower'),
                           ),
                         ],
                       ).animate().fadeIn(delay: 500.ms),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // Comments Section
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF12121A),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+                          gradient: LinearGradient(
+                            colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.04)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.chat_bubble_outline, color: Color(0xFF8B5CF6), size: 18),
-                                const SizedBox(width: 8),
-                                const Text('Condolences', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                const Icon(Icons.chat_bubble_outline, color: Color(0xFFa78bfa), size: 20),
+                                const SizedBox(width: 10),
+                                const Text('Condolences', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
                                 const Spacer(),
-                                Text('${_comments.length}', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFa78bfa).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text('${_comments.length}', style: const TextStyle(color: Color(0xFFa78bfa), fontSize: 12, fontWeight: FontWeight.w600)),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
 
                             // Add Comment
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _commentController,
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    decoration: InputDecoration(
-                                      hintText: 'Leave a message...',
-                                      hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                      filled: true,
-                                      fillColor: const Color(0xFF0A0A0F),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                        borderSide: BorderSide.none,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _commentController,
+                                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                                      decoration: InputDecoration(
+                                        hintText: 'Leave a message...',
+                                        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                                        border: InputBorder.none,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: _addComment,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
-                                      borderRadius: BorderRadius.circular(10),
+                                  GestureDetector(
+                                    onTap: _addComment,
+                                    child: Container(
+                                      margin: const EdgeInsets.all(6),
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(colors: [Color(0xFFa78bfa), Color(0xFF8b5cf6)]),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                                     ),
-                                    child: const Icon(Icons.send, color: Colors.white, size: 18),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
 
                             // Comments List
                             if (_isLoadingComments)
                               const Center(child: Padding(
-                                padding: EdgeInsets.all(20),
-                                child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+                                padding: EdgeInsets.all(24),
+                                child: CircularProgressIndicator(color: Color(0xFFa78bfa)),
                               ))
                             else if (_comments.isEmpty)
                               Center(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: const EdgeInsets.all(24),
                                   child: Column(
                                     children: [
-                                      Icon(Icons.chat_bubble_outline, color: Colors.grey[700], size: 32),
-                                      const SizedBox(height: 8),
-                                      Text('No messages yet', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                                      Text('Be the first to leave a message', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+                                      Icon(Icons.chat_bubble_outline, color: Colors.grey[600], size: 36),
+                                      const SizedBox(height: 10),
+                                      Text('No messages yet', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                                      Text('Be the first to leave a message', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                                     ],
                                   ),
                                 ),
@@ -424,40 +450,48 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
                                 (index) {
                                   final comment = _comments[index];
                                   return Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.all(10),
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF0A0A0F),
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.white.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
-                                            const Icon(Icons.person_outline, color: Color(0xFF8B5CF6), size: 14),
-                                            const SizedBox(width: 6),
+                                            Container(
+                                              width: 28,
+                                              height: 28,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(colors: [Color(0xFFa78bfa), Color(0xFF8b5cf6)]),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(Icons.person, color: Colors.white, size: 16),
+                                            ),
+                                            const SizedBox(width: 10),
                                             Text(
-                                              comment['anonymous_name'] ?? 'Anonymous',
-                                              style: const TextStyle(color: Color(0xFF8B5CF6), fontSize: 11, fontWeight: FontWeight.w600),
+                                              comment['display_name'] ?? comment['anonymous_name'] ?? 'Anonymous',
+                                              style: const TextStyle(color: Color(0xFFa78bfa), fontSize: 13, fontWeight: FontWeight.w600),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 8),
                                         Text(
                                           comment['content'] ?? '',
-                                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                          style: TextStyle(color: Colors.grey[300], fontSize: 13, height: 1.4),
                                         ),
                                       ],
                                     ),
-                                  ).animate().fadeIn(delay: (100 * index).ms);
+                                  ).animate().fadeIn(delay: (80 * index).ms);
                                 },
                               ),
                           ],
                         ),
                       ).animate().fadeIn(delay: 600.ms),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -474,42 +508,42 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
     required String label,
     required int count,
     required bool isActive,
+    required Color color,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: _isReacting ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF8B5CF6).withOpacity(0.2) : const Color(0xFF12121A),
-          borderRadius: BorderRadius.circular(14),
+          gradient: isActive 
+              ? LinearGradient(colors: [color.withOpacity(0.3), color.withOpacity(0.1)])
+              : null,
+          color: isActive ? null : Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isActive ? const Color(0xFF8B5CF6) : const Color(0xFF8B5CF6).withOpacity(0.3),
+            color: isActive ? color : Colors.white.withOpacity(0.15),
             width: isActive ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isActive ? const Color(0xFF8B5CF6) : Colors.grey[400],
-            ),
-            const SizedBox(height: 4),
+            Icon(icon, size: 34, color: isActive ? color : Colors.grey[400]),
+            const SizedBox(height: 6),
             Text(
               '$count',
               style: TextStyle(
-                color: isActive ? const Color(0xFF8B5CF6) : Colors.white,
-                fontSize: 16,
+                color: isActive ? color : Colors.white,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? const Color(0xFF8B5CF6) : Colors.grey[500],
-                fontSize: 10,
+                color: isActive ? color : Colors.grey[500],
+                fontSize: 11,
               ),
             ),
           ],
