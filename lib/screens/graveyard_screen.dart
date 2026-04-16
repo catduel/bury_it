@@ -71,19 +71,37 @@ class _GraveyardScreenState extends State<GraveyardScreen> {
             children: [
               // Header
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Row(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFFa78bfa), Color(0xFFf472b6)],
-                      ).createShader(bounds),
-                      child: const Text(
-                        'Graveyard',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ),
-                    const Spacer(),
+                    Row(
+                      children: [
+                        // Logo
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFa78bfa), Color(0xFF8b5cf6)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.favorite, color: Colors.white, size: 22),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Color(0xFFa78bfa), Color(0xFFf472b6)],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'Graveyard',
+                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                        const Spacer(),
                     // Sort Button
                     GestureDetector(
                       onTap: () => _showSortOptions(),
@@ -105,6 +123,13 @@ class _GraveyardScreenState extends State<GraveyardScreen> {
                           ],
                         ),
                       ),
+                    ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Eternal peace for your memories',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
                     ),
                   ],
                 ),
