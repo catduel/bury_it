@@ -325,11 +325,20 @@ class SupabaseService {
 
   static Future<bool> addReaction(String visitorId, String graveId, String type) async {
     try {
+      print('Adding reaction: visitor=$visitorId, grave=$graveId, type=$type');
+      
       final existing = await _client.from('reactions').select()
           .eq('visitor_id', visitorId).eq('grave_id', graveId).eq('type', type);
       
-      if (existing.isNotEmpty) return false;
+      print('Existing reactions: ${existing.length}');
+      
+      if (existing.isNotEmpty) {
+        print('Already reacted!');
+        return false;
+      }
 
+      print('Inserting new reaction...');
+      
       await _client.from('reactions').insert({
         'id': _uuid.v4(),
         'visitor_id': visitorId,
@@ -338,15 +347,18 @@ class SupabaseService {
         'created_at': DateTime.now().toIso8601String(),
       });
 
+      print('Reaction inserted, updating grave count...');
+
       final field = type == 'respect' ? 'respect_count' : 'flower_count';
       final grave = await _client.from('graves').select(field).eq('id', graveId).single();
       await _client.from('graves').update({field: (grave[field] ?? 0) + 1}).eq('id', graveId);
       
       await _trackDailyAction('reaction');
       
+      print('Reaction complete!');
       return true;
     } catch (e) {
-      print('Add reaction error: $e');
+      print('Add reaction ERROR: $e');
       return false;
     }
   }

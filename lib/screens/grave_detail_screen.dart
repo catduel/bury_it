@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/supabase_service.dart';
+import 'premium_screen.dart';
 
 class GraveDetailScreen extends StatefulWidget {
   final Map<String, dynamic> grave;
@@ -73,7 +74,7 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
 
     final canReact = await SupabaseService.canReact();
     if (!canReact) {
-      _showSnackBar('Daily reaction limit reached. Upgrade to Premium!', const Color(0xFFC9A962));
+      _showPremiumDialog();
       return;
     }
 
@@ -99,8 +100,77 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
         const Color(0xFF8B5CF6),
       );
     } else {
-      _showSnackBar('Already reacted to this grave', Colors.orange);
+      _showSnackBar('Could not add reaction. Please try again.', Colors.red);
     }
+  }
+
+  void _showPremiumDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a2e),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFd4a853), Color(0xFFb8942e)]),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.workspace_premium, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Text('Daily Limit Reached', style: TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You\'ve reached your free daily limit. Upgrade to Premium for unlimited access!',
+              style: TextStyle(color: Colors.grey[300], fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            _buildPremiumFeature(Icons.all_inclusive, 'Unlimited visits'),
+            _buildPremiumFeature(Icons.local_fire_department, 'Unlimited reactions'),
+            _buildPremiumFeature(Icons.chat, 'Unlimited comments'),
+            _buildPremiumFeature(Icons.yard, 'Unlimited graves'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Maybe Later', style: TextStyle(color: Colors.grey[500])),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const PremiumScreen()));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFd4a853),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Go Premium', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumFeature(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFFd4a853), size: 18),
+          const SizedBox(width: 10),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 13)),
+        ],
+      ),
+    );
   }
 
   Future<void> _addComment() async {
@@ -115,7 +185,7 @@ class _GraveDetailScreenState extends State<GraveDetailScreen> {
 
     final canComment = await SupabaseService.canComment();
     if (!canComment) {
-      _showSnackBar('Daily comment limit reached. Upgrade to Premium!', const Color(0xFFC9A962));
+      _showPremiumDialog();
       return;
     }
 
