@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/supabase_service.dart';
 import '../services/purchase_service.dart';
 
@@ -13,6 +14,9 @@ class PremiumScreen extends StatefulWidget {
 class _PremiumScreenState extends State<PremiumScreen> {
   String _selectedPlan = 'yearly';
   bool _isLoading = false;
+
+  static const String _termsUrl = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+  static const String _privacyUrl = 'https://github.com/catduel/bury_it/blob/master/privacy-policy.md';
 
   @override
   void initState() {
@@ -77,6 +81,13 @@ class _PremiumScreenState extends State<PremiumScreen> {
           backgroundColor: SupabaseService.isPremium ? Colors.green : Colors.grey,
         ),
       );
+    }
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -278,6 +289,17 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     ),
                   ).animate().fadeIn(delay: 600.ms),
 
+                  const SizedBox(height: 12),
+
+                  // Subscription Info
+                  Text(
+                    'Payment will be charged to your Apple ID account at confirmation of purchase. '
+                    'Subscription automatically renews unless canceled at least 24 hours before the end of the current period. '
+                    'You can manage and cancel your subscriptions in your App Store account settings.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                    textAlign: TextAlign.center,
+                  ),
+
                   const SizedBox(height: 16),
 
                   // Restore
@@ -289,10 +311,36 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     ),
                   ),
 
-                  Text(
-                    'Cancel anytime. Terms & Privacy Policy apply.',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                    textAlign: TextAlign.center,
+                  const SizedBox(height: 8),
+
+                  // Terms and Privacy Links - REQUIRED BY APPLE
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => _openUrl(_termsUrl),
+                        child: const Text(
+                          'Terms of Use',
+                          style: TextStyle(
+                            color: Color(0xFF8B5CF6),
+                            fontSize: 12,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      GestureDetector(
+                        onTap: () => _openUrl(_privacyUrl),
+                        child: const Text(
+                          'Privacy Policy',
+                          style: TextStyle(
+                            color: Color(0xFF8B5CF6),
+                            fontSize: 12,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
 
