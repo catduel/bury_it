@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'supabase_service.dart';
 
@@ -15,57 +15,98 @@ class PurchaseService {
   
   static List<ProductDetails> products = [];
   static bool isAvailable = false;
+  static bool isInitialized = false;
+  static String? initError;
   
   // Purchase callback
   static Function(bool success, String message)? onPurchaseUpdate;
 
   /// Initialize purchase service
   static Future<void> initialize() async {
-    isAvailable = await _iap.isAvailable();
+    if (isInitialized) return;
     
-    if (!isAvailable) {
-      print('IAP: Store not available');
-      return;
+    try {
+      isAvailable = await _iap.isAvailable();
+      
+      if (!isAvailable) {
+        initError = 'Store not available';
+        debugPrint('IAP: Store not available');
+        isInitialized = true;
+        return;
+      }
+
+      // Listen to purchase updates
+      _subscription = _iap.purchaseStream.listen(
+        _handlePurchaseUpdate,
+        onDone: () => _subscription?.cancel(),
+        onError: (error) {
+          debugPrint('IAP Stream Error: $error');
+        },
+      );
+
+      // Load products
+      await loadProducts();
+      isInitialized = true;
+    } catch (e) {
+      initError = e.toString();
+      debugPrint('IAP Init Error: $e');
+      isInitialized = true;
     }
-
-    // Listen to purchase updates
-    _subscription = _iap.purchaseStream.listen(
-      _handlePurchaseUpdate,
-      onDone: () => _subscription?.cancel(),
-      onError: (error) => print('IAP Error: $error'),
-    );
-
-    // Load products
-    await loadProducts();
   }
 
   /// Load products from App Store
   static Future<void> loadProducts() async {
-    if (!isAvailable) return;
+    if (!isAvailable) {
+      debugPrint('IAP: Cannot load products - store not available');
+      return;
+    }
 
     try {
+      debugPrint('IAP: Loading products: $_productIds');
       final response = await _iap.queryProductDetails(_productIds);
       
       if (response.error != null) {
-        print('IAP: Error loading products: ${response.error}');
+        debugPrint('IAP: Error loading products: ${response.error}');
+        initError = response.error?.message;
         return;
       }
 
       if (response.notFoundIDs.isNotEmpty) {
-        print('IAP: Products not found: ${response.notFoundIDs}');
+        debugPrint('IAP: Products not found: ${response.notFoundIDs}');
       }
 
       products = response.productDetails;
-      print('IAP: Loaded ${products.length} products');
+      debugPrint('IAP: Loaded ${products.length} products');
+      
+      for (var p in products) {
+        debugPrint('IAP: Product: ${p.id} - ${p.title} - ${p.price}');
+      }
     } catch (e) {
-      print('IAP: Load error: $e');
+      debugPrint('IAP: Load error: $e');
+      initError = e.toString();
     }
   }
 
   /// Purchase a subscription
   static Future<bool> purchase(String productId) async {
+    // Re-initialize if needed
+    if (!isInitialized) {
+      await initialize();
+    }
+    
     if (!isAvailable) {
-      onPurchaseUpdate?.call(false, 'Store not available');
+      onPurchaseUpdate?.call(false, 'Store not available. Please try again later.');
+      return false;
+    }
+
+    // Reload products if empty
+    if (products.isEmpty) {
+      debugPrint('IAP: Products empty, reloading...');
+      await loadProducts();
+    }
+
+    if (products.isEmpty) {
+      onPurchaseUpdate?.call(false, 'Unable to load products. Please try again.');
       return false;
     }
 
@@ -73,16 +114,21 @@ class PurchaseService {
     try {
       product = products.firstWhere((p) => p.id == productId);
     } catch (e) {
-      onPurchaseUpdate?.call(false, 'Product not found');
+      debugPrint('IAP: Product not found: $productId');
+      debugPrint('IAP: Available products: ${products.map((p) => p.id).toList()}');
+      onPurchaseUpdate?.call(false, 'Product not available. Please try again.');
       return false;
     }
 
     try {
+      debugPrint('IAP: Purchasing ${product.id}');
       final purchaseParam = PurchaseParam(productDetails: product);
-      return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      final result = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      debugPrint('IAP: Purchase initiated: $result');
+      return result;
     } catch (e) {
-      print('IAP: Purchase error: $e');
-      onPurchaseUpdate?.call(false, 'Purchase failed');
+      debugPrint('IAP: Purchase error: $e');
+      onPurchaseUpdate?.call(false, 'Purchase failed. Please try again.');
       return false;
     }
   }
@@ -90,7 +136,7 @@ class PurchaseService {
   /// Handle purchase updates
   static void _handlePurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
-      print('IAP: ${purchase.productID} - ${purchase.status}');
+      debugPrint('IAP: Update - ${purchase.productID} - ${purchase.status}');
       
       switch (purchase.status) {
         case PurchaseStatus.pending:
@@ -107,28 +153,45 @@ class PurchaseService {
           break;
           
         case PurchaseStatus.error:
-          onPurchaseUpdate?.call(false, purchase.error?.message ?? 'Error');
+          final errorMsg = purchase.error?.message ?? 'Purchase error';
+          debugPrint('IAP: Error - $errorMsg');
+          onPurchaseUpdate?.call(false, errorMsg);
           break;
           
         case PurchaseStatus.canceled:
-          onPurchaseUpdate?.call(false, 'Canceled');
+          onPurchaseUpdate?.call(false, 'Purchase canceled');
           break;
       }
 
       // Complete the purchase
       if (purchase.pendingCompletePurchase) {
-        await _iap.completePurchase(purchase);
+        try {
+          await _iap.completePurchase(purchase);
+          debugPrint('IAP: Purchase completed');
+        } catch (e) {
+          debugPrint('IAP: Complete purchase error: $e');
+        }
       }
     }
   }
 
   /// Restore purchases
   static Future<void> restorePurchases() async {
+    if (!isInitialized) {
+      await initialize();
+    }
+    
     if (!isAvailable) {
       onPurchaseUpdate?.call(false, 'Store not available');
       return;
     }
-    await _iap.restorePurchases();
+    
+    try {
+      await _iap.restorePurchases();
+    } catch (e) {
+      debugPrint('IAP: Restore error: $e');
+      onPurchaseUpdate?.call(false, 'Restore failed. Please try again.');
+    }
   }
 
   /// Get formatted price
@@ -144,5 +207,6 @@ class PurchaseService {
   /// Dispose
   static void dispose() {
     _subscription?.cancel();
+    isInitialized = false;
   }
 }

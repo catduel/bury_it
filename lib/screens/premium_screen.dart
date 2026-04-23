@@ -14,6 +14,7 @@ class PremiumScreen extends StatefulWidget {
 class _PremiumScreenState extends State<PremiumScreen> {
   String _selectedPlan = 'yearly';
   bool _isLoading = false;
+  bool _isInitializing = true;
 
   static const String _termsUrl = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
   static const String _privacyUrl = 'https://github.com/catduel/bury_it/blob/master/privacy-policy.md';
@@ -47,7 +48,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
       }
     };
     
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() => _isInitializing = false);
+    }
   }
 
   Future<void> _purchase() async {
@@ -94,6 +97,8 @@ class _PremiumScreenState extends State<PremiumScreen> {
   @override
   Widget build(BuildContext context) {
     final isPremium = SupabaseService.isPremium;
+    final monthlyPrice = PurchaseService.getPrice(PurchaseService.monthlyProductId);
+    final yearlyPrice = PurchaseService.getPrice(PurchaseService.yearlyProductId);
 
     return Scaffold(
       body: Container(
@@ -154,18 +159,18 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
                 const SizedBox(height: 24),
 
-                // Title
+                // Title - REQUIRED: Subscription Name
                 ShaderMask(
                   shaderCallback: (bounds) => const LinearGradient(
                     colors: [Color(0xFFC9A962), Color(0xFFE8D5A3), Color(0xFFC9A962)],
                   ).createShader(bounds),
                   child: const Text(
-                    'PREMIUM',
+                    'BURY IT PREMIUM',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      letterSpacing: 6,
+                      letterSpacing: 4,
                     ),
                   ),
                 ).animate().fadeIn(delay: 200.ms),
@@ -226,24 +231,27 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Yearly Plan
+                  // Yearly Plan - REQUIRED: Name, Duration, Price
                   _buildPlanCard(
                     isSelected: _selectedPlan == 'yearly',
-                    title: 'Yearly',
-                    subtitle: '\$1.67/month, billed annually',
-                    price: PurchaseService.getPrice(PurchaseService.yearlyProductId),
-                    badge: 'SAVE 44%',
+                    title: 'Bury It Premium Yearly',
+                    duration: '1 Year',
+                    subtitle: 'Save 44%',
+                    price: yearlyPrice,
+                    pricePerMonth: '\$1.67/month',
+                    badge: 'BEST VALUE',
                     onTap: () => setState(() => _selectedPlan = 'yearly'),
                   ),
 
                   const SizedBox(height: 12),
 
-                  // Monthly Plan
+                  // Monthly Plan - REQUIRED: Name, Duration, Price
                   _buildPlanCard(
                     isSelected: _selectedPlan == 'monthly',
-                    title: 'Monthly',
+                    title: 'Bury It Premium Monthly',
+                    duration: '1 Month',
                     subtitle: 'Billed monthly',
-                    price: PurchaseService.getPrice(PurchaseService.monthlyProductId),
+                    price: monthlyPrice,
                     onTap: () => setState(() => _selectedPlan = 'monthly'),
                   ),
 
@@ -251,7 +259,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
 
                   // Subscribe Button
                   GestureDetector(
-                    onTap: _isLoading ? null : _purchase,
+                    onTap: (_isLoading || _isInitializing) ? null : _purchase,
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -269,16 +277,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         ],
                       ),
                       child: Center(
-                        child: _isLoading
+                        child: (_isLoading || _isInitializing)
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                               )
                             : Text(
-                                _selectedPlan == 'yearly'
-                                    ? 'Subscribe for ${PurchaseService.getPrice(PurchaseService.yearlyProductId)}/year'
-                                    : 'Subscribe for ${PurchaseService.getPrice(PurchaseService.monthlyProductId)}/month',
+                                'Subscribe Now',
                                 style: const TextStyle(
                                   color: Colors.black,
                                   fontSize: 16,
@@ -289,15 +295,24 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     ),
                   ).animate().fadeIn(delay: 600.ms),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  // Subscription Info
-                  Text(
-                    'Payment will be charged to your Apple ID account at confirmation of purchase. '
-                    'Subscription automatically renews unless canceled at least 24 hours before the end of the current period. '
-                    'You can manage and cancel your subscriptions in your App Store account settings.',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 10),
-                    textAlign: TextAlign.center,
+                  // REQUIRED: Subscription Terms
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF12121A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    ),
+                    child: Text(
+                      'Payment will be charged to your Apple ID account at confirmation of purchase. '
+                      'Subscription automatically renews unless canceled at least 24 hours before the end of the current period. '
+                      'Your account will be charged for renewal within 24 hours prior to the end of the current period. '
+                      'You can manage and cancel your subscriptions by going to your App Store account settings after purchase.',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 10, height: 1.4),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -311,16 +326,16 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
-                  // Terms and Privacy Links - REQUIRED BY APPLE
+                  // REQUIRED: Terms and Privacy Links
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
                         onTap: () => _openUrl(_termsUrl),
                         child: const Text(
-                          'Terms of Use',
+                          'Terms of Use (EULA)',
                           style: TextStyle(
                             color: Color(0xFF8B5CF6),
                             fontSize: 12,
@@ -356,8 +371,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
   Widget _buildPlanCard({
     required bool isSelected,
     required String title,
+    required String duration,
     required String subtitle,
     required String price,
+    String? pricePerMonth,
     String? badge,
     required VoidCallback onTap,
   }) {
@@ -401,23 +418,38 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 children: [
                   Row(
                     children: [
-                      Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
                       if (badge != null) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
-                          child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(8)),
+                          child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text(
+                    '$duration • $subtitle',
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  if (pricePerMonth != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      pricePerMonth,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                    ),
+                  ],
                 ],
               ),
             ),
-            Text(price, style: const TextStyle(color: Color(0xFFC9A962), fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(price, style: const TextStyle(color: Color(0xFFC9A962), fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
